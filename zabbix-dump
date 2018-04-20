@@ -1,13 +1,13 @@
 #!/usr/bin/env bash
 #
 # NAME
-#     zabbix-mysql-dump - Configuration Backup for Zabbix with MySQL
+#     zabbix-dump - Configuration Backup for Zabbix with MySQL or PostgreSQL
 #
 # VERSION
 #     0.8.2
 #
 # SYNOPSIS
-#     This is a MySQL configuration backup script for Zabbix 1.x, 2.x and 3.0.x.
+#     This is a MySQL/PostgreSQL configuration backup script for Zabbix 1.x, 2.x and 3.0.x.
 #     It does a full backup of all configuration tables, but only a schema
 #     backup of large data tables.
 #
@@ -69,7 +69,7 @@ OPTIONS
 		Default: $DBHOST
 
 	-d DATABASE
-		/Zabbix database name.
+		Zabbix database name.
 		Default: $DBNAME
  
 	-P DBPORT
@@ -255,7 +255,7 @@ check_binary() {
 }
 clean_psql_pass() {
     if [ $DBTYPE = "psql" -a -n "$PGPASSFILE" ]; then
-       echo rm -f $PGPASSFILE
+       rm -f $PGPASSFILE
     fi
 }
 #
@@ -390,6 +390,7 @@ case $DBTYPE in
         ;;
 esac
 
+clean_psql_pass
 rm $ERRORLOG
 
 #
@@ -408,7 +409,6 @@ if [ "$COMPRESSION" == "gz" ]; then gzip -f "$DUMPFILE"; EXITCODE=$?; fi
 if [ "$COMPRESSION" == "xz" ]; then xz   -f "$DUMPFILE"; EXITCODE=$?; fi
 if [ $EXITCODE -ne 0 ]; then
 	echo -e "\nERROR: Could not compress backup file, see previous messages" >&2
-	clean_psql_pass
 	exit 1
 fi
 
@@ -423,12 +423,10 @@ if [ $GENERATIONSTOKEEP -gt 0 ]; then
 	eval ${REMOVE_OLD_CMD}
 	if [ $? -ne 0 ]; then
 		echo "ERROR: Could not rotate old backups" >&2
-		clean_psql_pass
 		exit 1
 	fi
 fi
 
-clean_psql_pass
 
 exit 0
 
